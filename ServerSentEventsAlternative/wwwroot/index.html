@@ -1,0 +1,68 @@
+<html lang="en">
+<div class="container">
+    <label for="code">
+        <input type="text" id="code" name="code" value="GOOGL"/>
+    </label>
+    <button id="send">Send</button>
+    <div class="response"></div>
+</div>
+<script>
+    let controller = new AbortController();
+    let signal = controller.signal;
+
+    async function fetchData() {
+        let code = document.getElementById('code').value;
+        let response = await fetch(`/stocks/sse`, {
+            signal,
+            method: 'POST',
+            headers: {
+                'Accept': 'text/event-stream',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({code})
+        });
+
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+
+
+        for (const reader = response.body.getReader(); ;) {
+            const {value, done} = await reader.read();
+
+            if (done) {
+                break;
+            }
+
+            const chunk = new TextDecoder().decode(value);
+            const subChunks = chunk.split(/(?<=})\n\ndata: (?={)/);
+
+            for (const subChunk of subChunks) {
+                const payload = subChunk.replace(/^data: /, "");
+                const parsed = JSON.parse(payload);
+
+                let listItem = document.createElement('li');
+                listItem.textContent = JSON.stringify(parsed);
+                document.querySelector('.response').appendChild(listItem);
+            }
+        }
+    }
+
+    function stopFetch() {
+        controller.abort();
+        controller = new AbortController(); // Re-instantiate AbortController for the next request
+        signal = controller.signal;
+        document.getElementById('send').textContent = 'Send';
+        document.getElementById('send').addEventListener('click', handleSend);
+    }
+
+    async function handleSend() {
+        document.getElementById('send').textContent = 'Stop';
+        document.getElementById('send').removeEventListener('click', handleSend);
+        document.getElementById('send').addEventListener('click', stopFetch);
+        await fetchData();
+    }
+
+    document.getElementById('send').addEventListener('click', handleSend);
+</script>
+</html>
