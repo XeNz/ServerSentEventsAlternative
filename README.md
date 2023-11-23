@@ -18,5 +18,5 @@
 
 ## More info
 
-Visit my [my blog post](https://blog.xentricator.be/2023-11-21-alternative-to-server-sent-events/) on this
+Visit [my blog post](https://blog.xentricator.be/2023-11-21-alternative-to-server-sent-events/) on this
 implementation to learn more.
